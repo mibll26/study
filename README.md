@@ -8,7 +8,7 @@
 npm install            # postinstall에서 prisma generate
 cp .env.example .env
 npm run db:migrate     # SQLite (prisma/dev.db)
-npm run db:seed        # 원료 14종 + 국가별 규제 상태 + 공급사 10곳 (큐레이션 초기 데이터)
+npm run db:seed        # 원료 40종 + 국가별 규제 상태 + 근거·상호작용 + 공급사 10곳 (큐레이션 초기 데이터)
 npm run dev            # http://localhost:3000
 ```
 
@@ -22,6 +22,7 @@ npm run dev            # http://localhost:3000
 | `/?contact=<id,id>` | 컨택 요청 모달 (`contact=sourcing` = 운영팀 소싱 지원) |
 | `/?apply=1` | 공급사 등록 신청 모달 |
 | `/ingredient/<slug>`, `/supplier/<slug>` | SEO용 개별 URL — 패널이 열린 상태로 원페이지 렌더 |
+| `/discover` | **목표 → 조합 탐색**: 기능성 목표 선택 → 근거(A~D)·기전·규제 상태별 후보 원료 → 조합 자동 생성·점수화(근거 35 · 기전 상보성 20 · 상호작용 ± · 규제 ±15/−40 · 공급 5 · 시장 포화 −15) → 배합 설계로 전송. 고정/제외, 부 목표, 조합 크기 조절 |
 | `/formulate`, `/formulate/<slug>` | **배합 설계**: 원료 조합 → 국가별 사용 가능 여부·함량 범위(KR 일일섭취량)·허용 표현 문구·공급사 매칭 실시간 체크 → 저장(공유 링크) → 매칭 공급사에 배합표 첨부 견적 요청 |
 | `/admin` | 백오피스 (인증 없음, 로컬 전용): 원료 큐레이션, 공급사·검증 배지, 컨택 요청 워크플로우, 공급사 신청 승인, 배합 설계 현황(원료 수요 신호), 정보 요청·오류 신고, 식약처 동기화 |
 
@@ -40,7 +41,9 @@ npm run dev            # http://localhost:3000
 prisma/schema.prisma          Ingredient · RegulatoryStatus(5축) · Supplier · SupplierIngredient · MfdsProduct · ContactRequest · SupplierApplication · InfoRequest · IssueReport · SyncJob · Setting
 src/lib/queries.ts            탐색/디렉터리 필터, 상세, 자동완성, 편집거리 유사 원료
 src/lib/url.ts                쿼리스트링 토글/패널 상태
-src/lib/formulation.ts        배합 체크 엔진 (규제 레벨 판정, 단위 환산·함량 범위, 공급사 매칭)
+src/lib/formulation.ts        배합 체크 엔진 (규제 레벨 판정, 단위 환산·함량 범위, 상호작용, 공급사 매칭)
+src/lib/discover.ts           조합 탐색 엔진 (원료×목표 근거, 원료×원료 상호작용, 조합 생성·점수화)
+prisma/seed-evidence.ts       원료 26종 추가 + 근거 72건 + 상호작용 32건 (근거 링크는 PubMed 검색 — 운영자가 실제 논문으로 교체 전제)
 src/lib/actions/public.ts     컨택 요청·공급사 신청·정보 요청·오류 신고 (Server Actions)
 src/lib/actions/admin.ts      백오피스 액션
 src/lib/collectors/           mfds.ts(필드 매핑 단일 지점) · sync.ts(동기화+원료 매핑)
