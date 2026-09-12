@@ -116,6 +116,6 @@ export async function linkProduct(productId: number, ingredientId: number | null
   revalidateAll();
 }
 export async function saveSettings(fd: FormData) {
-  for (const key of ["mfdsApiKey"]) await prisma.setting.upsert({ where: { key }, update: { value: s(fd, key) }, create: { key, value: s(fd, key) } });
+  for (const key of ["mfdsApiKey", "anthropicApiKey"]) if (fd.has(key)) await prisma.setting.upsert({ where: { key }, update: { value: s(fd, key) }, create: { key, value: s(fd, key) } });
   revalidatePath("/admin/sync");
 }

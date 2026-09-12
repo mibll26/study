@@ -36,6 +36,41 @@ model Ingredient {
   suppliers SupplierIngredient[]
   products  MfdsProduct[]
   formulationItems FormulationItem[]
+  evidence         IngredientEvidence[]
+  interactionsA    IngredientInteraction[] @relation("intA")
+  interactionsB    IngredientInteraction[] @relation("intB")
+}
+
+// 원료 × 목표(기능성) 근거 — 탐색 엔진의 입력
+model IngredientEvidence {
+  id           Int     @id @default(autoincrement())
+  ingredientId Int
+  goal         String  // FUNCTIONALITIES 태그
+  level        Int     // 4=A 메타분석/다수 RCT, 3=B 일부 RCT, 2=C 소규모/예비, 1=D 전임상/기전
+  mechanism    String  // 작용 기전 키워드 (상보성 계산에 사용)
+  summary      String
+  refLabel     String?
+  refUrl       String?
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([ingredientId, goal])
+  @@index([goal])
+}
+
+// 원료 × 원료 상호작용
+model IngredientInteraction {
+  id      Int    @id @default(autoincrement())
+  aId     Int
+  bId     Int
+  type    String // synergy / complementary / caution / antagonism / absorption
+  note    String
+  refUrl  String?
+
+  a Ingredient @relation("intA", fields: [aId], references: [id], onDelete: Cascade)
+  b Ingredient @relation("intB", fields: [bId], references: [id], onDelete: Cascade)
+
+  @@unique([aId, bId])
 }
 
 // ───────── 배합 설계 (Formulation) ─────────

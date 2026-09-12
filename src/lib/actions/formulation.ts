@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { parseFormulationInput, type FormulationInput } from "@/lib/formulation";
 import { revalidatePath } from "next/cache";
+import { suggestFormulationWithAi, type AiResult } from "@/lib/ai";
 
 const token = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);
 
@@ -22,4 +23,9 @@ export async function saveFormulation(prevSlug: string | null, name: string, not
   }
   revalidatePath(`/formulate/${slug}`); revalidatePath("/admin/formulations");
   return { slug };
+}
+
+/** 자연어 목표 → AI 배합 제안 (카탈로그 안의 원료만, KR 함량 범위로 보정) */
+export async function suggestFormulation(goal: string, hints: { markets: string[]; dosageForm: string }): Promise<AiResult> {
+  return suggestFormulationWithAi(String(goal ?? ""), { markets: Array.isArray(hints?.markets) ? hints.markets.map(String).slice(0, 5) : [], dosageForm: String(hints?.dosageForm ?? "") });
 }

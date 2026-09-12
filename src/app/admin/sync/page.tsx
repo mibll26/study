@@ -4,11 +4,12 @@ import { linkProduct, runSync, saveSettings } from "@/lib/actions/admin";
 export const dynamic = "force-dynamic";
 
 export default async function AdminSync() {
-  const [key, jobs, unlinked, ingredients, total] = await Promise.all([
-    prisma.setting.findUnique({ where: { key: "mfdsApiKey" } }), prisma.syncJob.findMany({ orderBy: { startedAt: "desc" }, take: 20 }),
+  const [key, aiKey, jobs, unlinked, ingredients, total] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: "mfdsApiKey" } }), prisma.setting.findUnique({ where: { key: "anthropicApiKey" } }), prisma.syncJob.findMany({ orderBy: { startedAt: "desc" }, take: 20 }),
     prisma.mfdsProduct.findMany({ where: { ingredientId: null }, take: 30, orderBy: { fetchedAt: "desc" } }), prisma.ingredient.findMany({ orderBy: { nameKo: "asc" }, select: { id: true, nameKo: true } }), prisma.mfdsProduct.count(),
   ]);
   const apiKey = key?.value || process.env.MFDS_API_KEY || "";
+  const anthropicKey = aiKey?.value || process.env.ANTHROPIC_API_KEY || "";
   return (
     <div className="space-y-6">
       <div><div className="eyebrow mb-1">Data sources</div><h1 className="text-[22px] font-semibold tracking-[-0.02em]">공공 DB 동기화</h1><p className="text-[12.5px] text-muted-2">L1 레이어. 원본은 MfdsProduct에 그대로 저장하고(스냅샷), 원료 사전과 자동 매핑합니다. 미매칭은 아래 큐에서 수동 연결.</p></div>
@@ -23,6 +24,15 @@ export default async function AdminSync() {
         <form action={runSync} className="mt-4 space-y-2">
           <label className="block text-[11.5px] text-muted-2">키워드 (줄바꿈 구분, 최대 10개 — 제품명 부분 일치)<textarea name="keywords" rows={3} className="input-sm mt-1 font-mono" placeholder={"마그네슘\n오메가3\n루테인"} /></label>
           <button className="btn-primary py-1.5" type="submit">동기화 실행</button>
+        </form>
+      </section>
+
+      <section className="border-2 border-ink bg-panel p-5">
+        <div className="eyebrow mb-2">AI 배합 추천 — Anthropic API</div>
+        <form action={saveSettings} className="flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1 text-[11.5px] text-muted-2">API 키 (<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">발급 ↗</a>)<input name="anthropicApiKey" type="password" defaultValue={anthropicKey} className="input-sm w-80 font-mono" autoComplete="off" /></label>
+          <button className="btn py-1" type="submit">키 저장</button>
+          <span className="text-[12px] text-muted-2">{anthropicKey ? "키 설정됨 — /formulate 의 AI 배합 추천이 동작합니다" : "키 없음 — AI 배합 추천 버튼이 오류를 반환합니다"}</span>
         </form>
       </section>
 

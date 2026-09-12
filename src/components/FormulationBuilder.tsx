@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { COUNTRIES, DOSAGE_FORMS, MARKET_CODES, VERIFICATION, formatLead, formatMoq } from "@/lib/constants";
 import { UNITS, type FormulationInput, type Report, type Level } from "@/lib/formulation";
-import { saveFormulation } from "@/lib/actions/formulation";
+import { saveFormulation, suggestFormulation } from "@/lib/actions/formulation";
+import type { AiSuggestion } from "@/lib/ai";
 
 export type PickerIngredient = { slug: string; nameKo: string; nameEn: string; category: string; functionality: string[]; intakeMin: number | null; intakeMax: number | null; intakeUnit: string | null };
 type Item = { slug: string; amount: number; unit: string };
@@ -38,6 +39,8 @@ export function FormulationBuilder({ ingredients, saved, initialAdd }: { ingredi
   const [pending, start] = useTransition();
   const [savedSlug, setSavedSlug] = useState<string | null>(saved?.slug ?? null);
   const [flash, setFlash] = useState<string | null>(null);
+  const [goal, setGoal] = useState("");
+  const [ai, setAi] = useState<{ status: "idle" | "loading" | "done" | "error"; suggestion?: AiSuggestion; error?: string }>({ status: "idle" });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bySlug = useMemo(() => new Map(ingredients.map((i) => [i.slug, i])), [ingredients]);
   const input: FormulationInput = useMemo(() => ({ items, dosageForm, markets }), [items, dosageForm, markets]);
@@ -66,6 +69,18 @@ export function FormulationBuilder({ ingredients, saved, initialAdd }: { ingredi
       if (slug !== saved?.slug) router.replace(`/formulate/${slug}`);
     });
   }
+  // AI 배합 추천: 목표 문장 → 원료·함량·제형·국가를 한 번에 채운다. 이후 체크는 기존 디바운스 로직이 처리
+  async function askAi() {
+    if (!goal.trim() || ai.status === "loading") return;
+    setAi({ status: "loading" });
+    const r = await suggestFormulation(goal, { markets, dosageForm });
+    if (!r.ok) { setAi({ status: "error", error: r.error }); return; }
+    const s = r.suggestion;
+    setItems(s.items.map(({ slug, amount, unit }) => ({ slug, amount, unit })).filter((i) => bySlug.has(i.slug)));
+    setDosageForm(s.dosageForm); setMarkets(s.markets);
+    if (!name.trim()) setName(s.name);
+    setAi({ status: "done", suggestion: s });
+  }
   const summaryText = items.map((i) => `${bySlug.get(i.slug)?.nameKo ?? i.slug} ${i.amount}${i.unit}`).join(" + ");
   const matched = report?.suppliers.filter((s) => s.coversAll && s.formOk !== false) ?? [];
   const quoteHref = savedSlug && matched.length ? `/?contact=${matched.slice(0, 5).map((s) => s.id).join(",")}&f=${savedSlug}#suppliers` : null;
@@ -91,11 +106,29 @@ export function FormulationBuilder({ ingredients, saved, initialAdd }: { ingredi
       {/* ② 배합표 */}
       <section className="space-y-4">
         <div className="border-2 border-ink bg-panel">
+          <div className="flex flex-wrap items-center gap-3 border-b-2 border-ink px-5 py-3"><div className="eyebrow">AI 배합 추천</div><span className="text-[11.5px] text-muted-2">목표를 적으면 카탈로그 안에서 원료·함량·제형·국가를 골라 채웁니다</span></div>
+          <div className="space-y-2 px-5 py-3">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <textarea id="f-goal" value={goal} onChange={(e) => setGoal(e.target.value)} rows={2} maxLength={1000} placeholder="예: 30~40대 직장인 수면·스트레스 케어, 캡슐, 한국·미국 판매 예정. 마그네슘은 꼭 넣고 싶음" className="input-sm flex-1" onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) askAi(); }} />
+              <button type="button" onClick={askAi} disabled={!goal.trim() || ai.status === "loading"} className="btn-primary shrink-0 self-start sm:self-stretch">{ai.status === "loading" ? "설계 중…" : items.length ? "AI로 다시 설계" : "AI로 배합 만들기"}</button>
+            </div>
+            {ai.status === "error" && <div className="text-[12.5px] text-red">{ai.error}</div>}
+            {ai.status === "done" && ai.suggestion && (
+              <div className="border-2 border-line bg-alt px-4 py-3 text-[12.5px] leading-[1.7]">
+                <div className="mb-1 font-medium">{ai.suggestion.name} — <span className="font-normal text-muted">{ai.suggestion.rationale}</span></div>
+                <ul className="space-y-0.5">{ai.suggestion.items.map((it) => <li key={it.slug}><span className="font-medium">{bySlug.get(it.slug)?.nameKo ?? it.slug}</span> <span className="font-mono text-[11.5px] text-muted-2">{it.amount}{it.unit}</span> — {it.reason}</li>)}</ul>
+                {ai.suggestion.cautions.length > 0 && <ul className="mt-2 space-y-0.5 text-amber">{ai.suggestion.cautions.map((c, i) => <li key={i}>⚠ {c}</li>)}</ul>}
+                <div className="mt-2 text-[11px] text-faint">AI 제안은 참고용입니다. 아래 배합표에서 함량을 조정하면 규제·함량 체크가 다시 실행됩니다.</div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="border-2 border-ink bg-panel">
           <div className="flex flex-wrap items-center gap-3 border-b-2 border-ink px-5 py-3">
             <div className="eyebrow">② 배합표</div>
             <input id="f-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="배합 이름 (예: 수면 케어 3종)" className="input-sm ml-auto max-w-xs" />
           </div>
-          {items.length === 0 ? <div className="px-5 py-12 text-center text-[13.5px] text-muted-2">왼쪽에서 원료를 눌러 추가하세요. 함량은 KR 일일섭취량 하한으로 채워집니다.</div> : (
+          {items.length === 0 ? <div className="px-5 py-12 text-center text-[13.5px] text-muted-2">왼쪽에서 원료를 눌러 추가하거나, 위에 목표를 적고 AI에게 맡기세요. 함량은 KR 일일섭취량 하한으로 채워집니다.</div> : (
             <table className="w-full text-[13px]">
               <thead><tr><th className="th">원료</th><th className="th">1일 함량</th><th className="th">함량 체크</th><th className="th" /></tr></thead>
               <tbody>
