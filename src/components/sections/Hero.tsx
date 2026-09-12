@@ -17,7 +17,7 @@ export async function Hero({ q }: { q?: string }) {
       <div className="pointer-events-none absolute inset-0 z-[1]" style={{ background: "linear-gradient(100deg, rgba(246,244,238,0.97) 0%, rgba(246,244,238,0.93) 38%, rgba(246,244,238,0.55) 68%, rgba(246,244,238,0.2) 100%)" }} />
       <div className="relative z-[2] mx-auto max-w-[1260px] px-6 pb-[92px] pt-[112px] md:px-8">
         <p className="eyebrow-lg mb-6">Global supplement ingredient &amp; sourcing database</p>
-        <h1 className="mb-[22px] max-w-[19ch] text-[38px] font-bold leading-[1.08] tracking-[-0.028em] sm:text-[54px]" style={{ textWrap: "pretty" }}>전 세계 건강기능식품 원료와 공급사를 한 곳에서.</h1>
+        <h1 className="mb-[22px] whitespace-nowrap text-[clamp(22px,3.7vw,48px)] font-bold leading-[1.15] tracking-[-0.01em]" style={{ fontFamily: '"Gungsuh", "궁서", "GungsuhChe", "궁서체", "AppleMyungjo", var(--font-myeongjo), serif' }}>전 세계 건강기능식품 원료와 공급사를 한 곳에서.</h1>
         <p className="mb-11 max-w-[58ch] text-[16px] leading-[1.78] text-muted" style={{ textWrap: "pretty" }}>한국·미국·EU·일본·중국 공공 규제 DB를 통합했습니다. 원료가 어디에서 쓸 수 있는지 확인하고, 조건에 맞는 제조사·원료사에 이 페이지에서 바로 문의하세요. 모든 항목에 출처와 확인일을 붙였습니다.</p>
         <SearchBox initial={q} nearest={nearest} />
         <div className="mt-[18px] flex flex-wrap items-center gap-2">

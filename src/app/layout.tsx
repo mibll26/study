@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Inter_Tight, IBM_Plex_Mono, Noto_Sans_KR } from "next/font/google";
+import { Inter_Tight, IBM_Plex_Mono, Noto_Sans_KR, Nanum_Myeongjo } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
 const interTight = Inter_Tight({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter-tight" });
 const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-plex-mono" });
 const noto = Noto_Sans_KR({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-noto" });
+const myeongjo = Nanum_Myeongjo({ subsets: ["latin"], weight: ["700", "800"], variable: "--font-myeongjo" });
 
 export const metadata: Metadata = {
   title: { default: "GlobalNutri Source", template: "%s · GlobalNutri Source" },
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={`${interTight.variable} ${plexMono.variable} ${noto.variable}`}>
+    <html lang="ko" className={`${interTight.variable} ${plexMono.variable} ${noto.variable} ${myeongjo.variable}`}>
       <body className="min-h-screen">
         <header className="sticky top-0 z-40 border-b-2 border-ink bg-paper-2/90 backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-[1260px] items-center gap-8 px-8">
