@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminIngredients(props: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await props.searchParams;
-  const rows = await prisma.ingredient.findMany({ where: q ? { OR: [{ nameKo: { contains: q } }, { nameEn: { contains: q } }, { aliases: { contains: q } }] } : undefined, orderBy: { nameKo: "asc" }, include: { statuses: { select: { countryCode: true, published: true } }, _count: { select: { suppliers: true, products: true } } } });
+  const rows = await prisma.ingredient.findMany({ where: q ? { OR: [{ nameKo: { contains: q, mode: "insensitive" } }, { nameEn: { contains: q, mode: "insensitive" } }, { aliases: { contains: q, mode: "insensitive" } }] } : undefined, orderBy: { nameKo: "asc" }, include: { statuses: { select: { countryCode: true, published: true } }, _count: { select: { suppliers: true, products: true } } } });
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">

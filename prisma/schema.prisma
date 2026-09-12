@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // Supabase Transaction pooler (6543) — 앱 런타임용
+  directUrl = env("DIRECT_URL")     // Supabase Direct/Session (5432) — prisma migrate 용
 }
 
 // ───────── 원료 (Ingredient) ─────────

@@ -26,7 +26,7 @@ export async function exploreIngredients(q: ExploreQuery) {
   const AND: Prisma.IngredientWhereInput[] = [];
   if (q.q) {
     const t = q.q;
-    AND.push({ OR: [{ nameKo: { contains: t } }, { nameEn: { contains: t } }, { nameScientific: { contains: t } }, { aliases: { contains: t } }, { functionality: { contains: t } }, { category: { contains: t } }] });
+    AND.push({ OR: [{ nameKo: { contains: t, mode: "insensitive" } }, { nameEn: { contains: t, mode: "insensitive" } }, { nameScientific: { contains: t, mode: "insensitive" } }, { aliases: { contains: t, mode: "insensitive" } }, { functionality: { contains: t, mode: "insensitive" } }, { category: { contains: t, mode: "insensitive" } }] });
   }
   for (const f of q.functionality) AND.push({ functionality: { contains: `"${f}"` } });
   for (const f of q.forms) AND.push({ dosageForms: { contains: `"${f}"` } });
@@ -51,7 +51,7 @@ export async function exploreIngredients(q: ExploreQuery) {
 export async function exploreProducts(q: ExploreQuery, take = 30) {
   if (q.type === "ingredient") return [];
   const AND: Prisma.MfdsProductWhereInput[] = [];
-  if (q.q) AND.push({ OR: [{ name: { contains: q.q } }, { company: { contains: q.q } }, { ingredientRaw: { contains: q.q } }, { functionality: { contains: q.q } }] });
+  if (q.q) AND.push({ OR: [{ name: { contains: q.q, mode: "insensitive" } }, { company: { contains: q.q, mode: "insensitive" } }, { ingredientRaw: { contains: q.q, mode: "insensitive" } }, { functionality: { contains: q.q, mode: "insensitive" } }] });
   if (q.functionality.length) AND.push({ OR: q.functionality.map((f) => ({ functionality: { contains: f } })) });
   return prisma.mfdsProduct.findMany({ where: { AND }, take, orderBy: { fetchedAt: "desc" }, include: { ingredient: { select: { slug: true, nameKo: true } } } });
 }
@@ -97,9 +97,9 @@ export async function suggest(q: string): Promise<Suggestion[]> {
   const t = q.trim();
   if (t.length < 1) return [];
   const [ings, sups, prods] = await Promise.all([
-    prisma.ingredient.findMany({ where: { OR: [{ nameKo: { contains: t } }, { nameEn: { contains: t } }, { aliases: { contains: t } }, { nameScientific: { contains: t } }] }, take: 5, select: { slug: true, nameKo: true, nameEn: true } }),
-    prisma.supplier.findMany({ where: { visible: true, OR: [{ nameKo: { contains: t } }, { nameEn: { contains: t } }] }, take: 3, select: { slug: true, nameKo: true, nameEn: true } }),
-    prisma.mfdsProduct.findMany({ where: { OR: [{ name: { contains: t } }, { company: { contains: t } }] }, take: 3, select: { id: true, name: true, company: true } }),
+    prisma.ingredient.findMany({ where: { OR: [{ nameKo: { contains: t, mode: "insensitive" } }, { nameEn: { contains: t, mode: "insensitive" } }, { aliases: { contains: t, mode: "insensitive" } }, { nameScientific: { contains: t, mode: "insensitive" } }] }, take: 5, select: { slug: true, nameKo: true, nameEn: true } }),
+    prisma.supplier.findMany({ where: { visible: true, OR: [{ nameKo: { contains: t, mode: "insensitive" } }, { nameEn: { contains: t, mode: "insensitive" } }] }, take: 3, select: { slug: true, nameKo: true, nameEn: true } }),
+    prisma.mfdsProduct.findMany({ where: { OR: [{ name: { contains: t, mode: "insensitive" } }, { company: { contains: t, mode: "insensitive" } }] }, take: 3, select: { id: true, name: true, company: true } }),
   ]);
   const fns = (await import("@/lib/constants")).FUNCTIONALITIES.filter((f) => f.includes(t)).slice(0, 3);
   return [
