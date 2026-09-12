@@ -22,7 +22,8 @@ npm run dev            # http://localhost:3000
 | `/?contact=<id,id>` | 컨택 요청 모달 (`contact=sourcing` = 운영팀 소싱 지원) |
 | `/?apply=1` | 공급사 등록 신청 모달 |
 | `/ingredient/<slug>`, `/supplier/<slug>` | SEO용 개별 URL — 패널이 열린 상태로 원페이지 렌더 |
-| `/admin` | 백오피스 (인증 없음, 로컬 전용): 원료 큐레이션, 공급사·검증 배지, 컨택 요청 워크플로우, 공급사 신청 승인, 정보 요청·오류 신고, 식약처 동기화 |
+| `/formulate`, `/formulate/<slug>` | **배합 설계**: 원료 조합 → 국가별 사용 가능 여부·함량 범위(KR 일일섭취량)·허용 표현 문구·공급사 매칭 실시간 체크 → 저장(공유 링크) → 매칭 공급사에 배합표 첨부 견적 요청 |
+| `/admin` | 백오피스 (인증 없음, 로컬 전용): 원료 큐레이션, 공급사·검증 배지, 컨택 요청 워크플로우, 공급사 신청 승인, 배합 설계 현황(원료 수요 신호), 정보 요청·오류 신고, 식약처 동기화 |
 
 필터·패널 상태는 모두 쿼리스트링에 반영되어 링크 공유 시 재현됩니다. 비교 트레이(최대 3개)만 클라이언트 상태입니다.
 
@@ -39,6 +40,7 @@ npm run dev            # http://localhost:3000
 prisma/schema.prisma          Ingredient · RegulatoryStatus(5축) · Supplier · SupplierIngredient · MfdsProduct · ContactRequest · SupplierApplication · InfoRequest · IssueReport · SyncJob · Setting
 src/lib/queries.ts            탐색/디렉터리 필터, 상세, 자동완성, 편집거리 유사 원료
 src/lib/url.ts                쿼리스트링 토글/패널 상태
+src/lib/formulation.ts        배합 체크 엔진 (규제 레벨 판정, 단위 환산·함량 범위, 공급사 매칭)
 src/lib/actions/public.ts     컨택 요청·공급사 신청·정보 요청·오류 신고 (Server Actions)
 src/lib/actions/admin.ts      백오피스 액션
 src/lib/collectors/           mfds.ts(필드 매핑 단일 지점) · sync.ts(동기화+원료 매핑)

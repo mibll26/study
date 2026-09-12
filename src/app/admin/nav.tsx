@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const items = [
   ["/admin", "대시보드"], ["/admin/ingredients", "원료 큐레이션"], ["/admin/suppliers", "공급사"], ["/admin/contacts", "컨택 요청"],
-  ["/admin/applications", "공급사 신청"], ["/admin/requests", "정보 요청 · 오류 신고"], ["/admin/sync", "데이터 동기화"],
+  ["/admin/applications", "공급사 신청"], ["/admin/formulations", "배합 설계"], ["/admin/requests", "정보 요청 · 오류 신고"], ["/admin/sync", "데이터 동기화"],
 ];
 
 export function AdminNav() {

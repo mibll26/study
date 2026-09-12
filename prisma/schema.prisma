@@ -20,6 +20,10 @@ model Ingredient {
   dosageForms    String   @default("[]")   // JSON string[] 일반적 제형
   descriptionKo  String?
   dailyIntake    String?
+  intakeMin      Float?                    // 일일섭취량 하한 (KR 기준, 자동 체크용)
+  intakeMax      Float?
+  intakeUnit     String?                   // mg / µg / CFU
+  intakeBasis    String?                   // 기준 성분 (예: 진세노사이드, 실리마린)
   caution        String?
   sourceName     String?
   sourceUrl      String?
@@ -31,6 +35,33 @@ model Ingredient {
   statuses  RegulatoryStatus[]
   suppliers SupplierIngredient[]
   products  MfdsProduct[]
+  formulationItems FormulationItem[]
+}
+
+// ───────── 배합 설계 (Formulation) ─────────
+model Formulation {
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique            // 공유 URL 토큰
+  name          String
+  dosageForm    String
+  targetMarkets String   @default("[]")     // JSON string[]
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items FormulationItem[]
+}
+
+model FormulationItem {
+  id            Int    @id @default(autoincrement())
+  formulationId Int
+  ingredientId  Int
+  amount        Float
+  unit          String
+  order         Int    @default(0)
+
+  formulation Formulation @relation(fields: [formulationId], references: [id], onDelete: Cascade)
+  ingredient  Ingredient  @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
 }
 
 // 국가별 규제 상태 — 5축 스키마
@@ -132,6 +163,7 @@ model ContactRequest {
   supplierIds   String    @default("[]") // JSON number[]
   supplierNames String    @default("[]")
   status        String    @default("submitted") // submitted / reviewed / sent / responded / closed
+  formulationSlug String?                     // 배합 설계에서 온 견적 요청
   createdAt     DateTime  @default(now())
   sentAt        DateTime?
   respondedAt   DateTime?

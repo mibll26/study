@@ -38,7 +38,7 @@ export async function submitContact(_prev: FormState, fd: FormData): Promise<For
       refNo, company: s(fd, "company"), contactName: s(fd, "contactName"), title: s(fd, "title") || null, email: s(fd, "email"), phone: s(fd, "phone"),
       ingredient: s(fd, "ingredient"), dosageForm: s(fd, "dosageForm"), quantityRange: s(fd, "quantityRange"), targetDate: s(fd, "targetDate") || null,
       targetMarkets: JSON.stringify(list(fd, "targetMarkets")), message: s(fd, "message") || null,
-      supplierIds: JSON.stringify(supplierIds), supplierNames: JSON.stringify(suppliers.map((x) => x.nameKo)),
+      supplierIds: JSON.stringify(supplierIds), supplierNames: JSON.stringify(suppliers.map((x) => x.nameKo)), formulationSlug: s(fd, "formulationSlug") || null,
     },
   });
   return { ok: true, refNo, message: "접수되었습니다. 운영팀 검토 후 공급사에 전달됩니다 (영업일 1일 내)." };

@@ -14,7 +14,7 @@ type Status = {
 };
 export type IngredientSeed = {
   slug: string; nameKo: string; nameEn: string; nameScientific?: string; aliases: string[]; category: string; functionality: string[]; dosageForms: string[];
-  descriptionKo: string; dailyIntake?: string; caution?: string; statuses: Status[]; supplierSlugs: string[];
+  descriptionKo: string; dailyIntake?: string; intakeMin?: number; intakeMax?: number; intakeUnit?: string; intakeBasis?: string; caution?: string; statuses: Status[]; supplierSlugs: string[];
 };
 
 const KR_NOTIFIED = (claim: Claim, extra?: Partial<Status>): Status => ({
@@ -52,6 +52,7 @@ const JP_FFC = (claim: Claim): Status => ({
 export const INGREDIENTS: IngredientSeed[] = [
   {
     slug: "magnesium", nameKo: "마그네슘", nameEn: "Magnesium", nameScientific: "Mg", aliases: ["Magnesium citrate", "Magnesium oxide", "Magnesium glycinate", "마그네슘 시트레이트"],
+    intakeMin: 94.5, intakeMax: 250, intakeUnit: "mg",
     category: "비타민·미네랄", functionality: ["수면", "근육", "에너지"], dosageForms: ["정제", "캡슐", "분말"],
     descriptionKo: "2025년 국내 시장 +58.3%(3,000→4,750억 원) 성장한 대표 미네랄. 수면·근육 기능 소구로 브랜드 신제품이 집중되는 원료.",
     dailyIntake: "KR 94.5–250 mg · US supplemental UL 350 mg", caution: "고용량 섭취 시 묽은 변. 일부 항생제와 병용 주의.",
@@ -66,6 +67,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "vitamin-d", nameKo: "비타민D", nameEn: "Vitamin D", nameScientific: "Cholecalciferol (D3)", aliases: ["Vitamin D3", "Ergocalciferol", "콜레칼시페롤"],
+    intakeMin: 5, intakeMax: 10, intakeUnit: "µg",
     category: "비타민·미네랄", functionality: ["뼈건강", "면역"], dosageForms: ["정제", "캡슐", "액상"],
     descriptionKo: "2025년 +53.4%(1,760→2,700억 원). 비타민·미네랄이 홍삼을 처음으로 추월한 해의 주역.",
     dailyIntake: "KR 5–10 µg · EU NRV 5 µg", caution: "지용성 — 누적 섭취량 모니터링.",
@@ -78,6 +80,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "omega-3", nameKo: "오메가3", nameEn: "Omega-3", nameScientific: "EPA + DHA", aliases: ["Fish oil", "Algal oil", "rTG 오메가3", "EPA 및 DHA 함유 유지"],
+    intakeMin: 500, intakeMax: 2000, intakeUnit: "mg", intakeBasis: "EPA+DHA 합",
     category: "지방산", functionality: ["혈행", "눈건강", "기억력"], dosageForms: ["연질캡슐", "액상"],
     descriptionKo: "2025년 +45.7% 성장. rTG·초임계 추출 등 원료 등급 경쟁이 치열하며 식물성(조류) 원료 수요 증가.",
     dailyIntake: "KR EPA+DHA 합으로 500–2,000 mg", caution: "항응고제 복용 시 의사 상담.",
@@ -90,6 +93,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "lutein", nameKo: "루테인", nameEn: "Lutein", nameScientific: "Tagetes erecta extract", aliases: ["Marigold extract", "마리골드꽃추출물", "Lutein esters", "지아잔틴"],
+    intakeMin: 10, intakeMax: 20, intakeUnit: "mg", intakeBasis: "루테인",
     category: "식물추출물", functionality: ["눈건강"], dosageForms: ["연질캡슐", "정제"],
     descriptionKo: "황반색소밀도 유지 기능성. 마리골드꽃추출물은 고시형이나, 특정 제제(루테인지아잔틴복합추출물 등)는 개별인정형으로 인정권자가 존재.",
     dailyIntake: "KR 루테인으로 10–20 mg", caution: "고용량 섭취 시 일시적 피부 황변 보고.",
@@ -102,6 +106,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "probiotics", nameKo: "프로바이오틱스", nameEn: "Probiotics", nameScientific: "Lactobacillus spp., Bifidobacterium spp.", aliases: ["유산균", "Lactic acid bacteria", "LAB", "생유산균"],
+    intakeMin: 100000000, intakeMax: 10000000000, intakeUnit: "CFU",
     category: "프로바이오틱스", functionality: ["장건강", "면역"], dosageForms: ["스틱", "캡슐", "분말"],
     descriptionKo: "고시형 19개 균종. 균주별 개별인정(면역·체지방 등)이 활발해 인정권자 확인이 소싱의 핵심.",
     dailyIntake: "KR 1×10⁸ – 1×10¹⁰ CFU", caution: "면역저하자 주의.",
@@ -124,6 +129,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "red-ginseng", nameKo: "홍삼", nameEn: "Red Ginseng", nameScientific: "Panax ginseng C.A. Meyer", aliases: ["홍삼농축액", "진세노사이드", "Korean red ginseng"],
+    intakeMin: 3, intakeMax: 80, intakeUnit: "mg", intakeBasis: "진세노사이드 Rg1+Rb1+Rg3 합",
     category: "식물추출물", functionality: ["면역", "피로개선", "혈행", "기억력"], dosageForms: ["액상", "스틱", "캡슐", "정제"],
     descriptionKo: "2025년 -14.2%였으나 9,536억 원으로 여전히 단일 원료 1위. 원료 수급은 대형 인삼 조합·KGC 계열이 주도.",
     dailyIntake: "KR 진세노사이드 Rg1+Rb1+Rg3 합 3–80 mg", caution: "항응고제·혈당강하제 병용 시 주의.",
@@ -136,6 +142,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "milk-thistle", nameKo: "밀크씨슬 추출물", nameEn: "Milk Thistle Extract", nameScientific: "Silybum marianum", aliases: ["실리마린", "Silymarin", "카르두스 마리아누스"],
+    intakeMin: 130, intakeMax: 130, intakeUnit: "mg", intakeBasis: "실리마린",
     category: "식물추출물", functionality: ["간건강"], dosageForms: ["정제", "캡슐"],
     descriptionKo: "간 건강 기능성 고시형 원료. 실리마린 130mg 규격이 표준. 인도·유럽 원료사 다수.",
     dailyIntake: "KR 실리마린으로 130 mg", caution: "국화과 알레르기 주의.",
@@ -148,6 +155,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "vitamin-c", nameKo: "비타민C", nameEn: "Vitamin C", nameScientific: "L-Ascorbic acid", aliases: ["아스코르브산", "Ascorbic acid"],
+    intakeMin: 30, intakeMax: 1000, intakeUnit: "mg",
     category: "비타민·미네랄", functionality: ["면역", "항산화", "피부"], dosageForms: ["정제", "분말", "구미"],
     descriptionKo: "가장 보편적인 비타민 원료. 중국산 아스코르브산이 가격 주도.",
     dailyIntake: "KR 30–1,000 mg", caution: "고용량 시 위장 장애.",
@@ -160,6 +168,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "zinc", nameKo: "아연", nameEn: "Zinc", nameScientific: "Zn", aliases: ["징크", "Zinc gluconate", "Zinc picolinate"],
+    intakeMin: 2.55, intakeMax: 12, intakeUnit: "mg",
     category: "비타민·미네랄", functionality: ["면역", "피부"], dosageForms: ["정제", "캡슐"],
     descriptionKo: "면역 소구 미네랄. 마그네슘·비타민D와 복합 설계가 흔함.",
     dailyIntake: "KR 2.55–12 mg", caution: "장기 고용량 시 구리 결핍.",
@@ -168,10 +177,11 @@ export const INGREDIENTS: IngredientSeed[] = [
       US_GRANDFATHERED({ original: "Supports immune function*", translated: "면역 기능을 돕습니다*" }),
       EU_AUTHORISED({ original: "Zinc contributes to the normal function of the immune system", translated: "아연은 면역계의 정상적인 기능에 기여합니다" }),
     ],
-    supplierSlugs: ["jiangxi-mineral", "kolmar-bnh"],
+    supplierSlugs: ["jiangxi-mineral", "kolmar-bnh", "novarex"],
   },
   {
     slug: "coenzyme-q10", nameKo: "코엔자임Q10", nameEn: "Coenzyme Q10", nameScientific: "Ubiquinone", aliases: ["CoQ10", "유비퀴논", "Ubiquinol"],
+    intakeMin: 90, intakeMax: 100, intakeUnit: "mg",
     category: "기타", functionality: ["항산화", "혈압"], dosageForms: ["연질캡슐"],
     descriptionKo: "항산화·높은 혈압 감소 고시형 원료. 일본 카네카 등 발효 원료가 프리미엄.",
     dailyIntake: "KR 90–100 mg", caution: "와파린 병용 시 주의.",
@@ -184,6 +194,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "glucosamine", nameKo: "글루코사민", nameEn: "Glucosamine", nameScientific: "Glucosamine sulfate / HCl", aliases: ["글루코사민황산염", "Glucosamine sulfate"],
+    intakeMin: 1500, intakeMax: 2000, intakeUnit: "mg", intakeBasis: "글루코사민",
     category: "기타", functionality: ["관절"], dosageForms: ["정제"],
     descriptionKo: "2025년 -55% 급감한 쇠퇴 원료. 관절 소구는 MSM·보스웰리아 등으로 이동 중.",
     dailyIntake: "KR 글루코사민으로 1.5–2 g", caution: "갑각류 알레르기 주의.",
@@ -207,6 +218,7 @@ export const INGREDIENTS: IngredientSeed[] = [
   },
   {
     slug: "hyaluronic-acid", nameKo: "히알루론산", nameEn: "Hyaluronic Acid", nameScientific: "Sodium hyaluronate", aliases: ["히알루론산나트륨", "HA"],
+    intakeMin: 120, intakeMax: 240, intakeUnit: "mg",
     category: "기타", functionality: ["피부"], dosageForms: ["정제", "스틱"],
     descriptionKo: "피부 보습 고시형 원료. 저분자 발효 원료(일본·중국) 수급.",
     dailyIntake: "KR 120–240 mg", caution: "정보 없음",

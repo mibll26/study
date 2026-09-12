@@ -22,13 +22,15 @@ function CheckGroup({ name, options }: { name: string; options: string[] }) {
 }
 
 /** FR-5 컨택 요청 폼 */
-export function ContactForm({ suppliers, ingredient }: { suppliers: { id: number; nameKo: string }[]; ingredient?: string }) {
+export function ContactForm({ suppliers, ingredient, dosageForm, markets, formulationSlug, formulationHref }: { suppliers: { id: number; nameKo: string }[]; ingredient?: string; dosageForm?: string; markets?: string[]; formulationSlug?: string; formulationHref?: string }) {
   const [state, action, pending] = useActionState(submitContact, null);
   const e = state?.errors ?? {};
   if (state?.ok) return <Notice state={state} />;
   return (
     <form action={action} className="space-y-[18px]">
       <p className="text-[13px] leading-[1.75] text-muted">선택한 공급사에 한 번에 문의합니다. 운영팀이 스팸·유효성 검토 후 전달하며(영업일 1일 내), 공급사 응답은 이메일로 받습니다.</p>
+      {formulationSlug && <input type="hidden" name="formulationSlug" value={formulationSlug} />}
+      {formulationHref && <div className="callout">배합표가 문의에 첨부됩니다. <a href={formulationHref}>배합 보기 ↗</a></div>}
       <div className="panel p-4 text-[13px]">
         <div className="eyebrow mb-2">문의 대상 공급사</div>
         <div className="flex flex-wrap gap-1.5">{suppliers.map((s) => <span key={s.id} className="tag">{s.nameKo}<input type="hidden" name="supplierIds" value={s.id} /></span>)}</div>
@@ -40,11 +42,11 @@ export function ContactForm({ suppliers, ingredient }: { suppliers: { id: number
         <Field label="이메일" required error={e.email}><input id="c-email" name="email" type="email" className="input" /></Field>
         <Field label="연락처" required error={e.phone}><input id="c-phone" name="phone" className="input" placeholder="010-0000-0000" /></Field>
         <Field label="관심 원료/제품" required error={e.ingredient}><input id="c-ingredient" name="ingredient" defaultValue={ingredient ?? ""} className="input" /></Field>
-        <Field label="희망 제형" required error={e.dosageForm}><select id="c-form" name="dosageForm" className="input" defaultValue=""><option value="" disabled>선택</option>{DOSAGE_FORMS.map((f) => <option key={f}>{f}</option>)}</select></Field>
+        <Field label="희망 제형" required error={e.dosageForm}><select id="c-form" name="dosageForm" className="input" defaultValue={dosageForm ?? ""}><option value="" disabled>선택</option>{DOSAGE_FORMS.map((f) => <option key={f}>{f}</option>)}</select></Field>
         <Field label="예상 수량" required error={e.quantityRange}><select id="c-qty" name="quantityRange" className="input" defaultValue=""><option value="" disabled>선택</option>{QUANTITY_RANGES.map((f) => <option key={f}>{f}</option>)}</select></Field>
         <Field label="희망 납기"><input id="c-date" name="targetDate" type="month" className="input" /></Field>
       </div>
-      <Field label="판매 예정 국가"><div className="flex flex-wrap gap-x-4 gap-y-2">{MARKET_CODES.map((c) => <label key={c} className="flex items-center gap-1.5 text-[13px]"><input type="checkbox" name="targetMarkets" value={c} /> {COUNTRIES[c].flag} {COUNTRIES[c].name}</label>)}</div></Field>
+      <Field label="판매 예정 국가"><div className="flex flex-wrap gap-x-4 gap-y-2">{MARKET_CODES.map((c) => <label key={c} className="flex items-center gap-1.5 text-[13px]"><input type="checkbox" name="targetMarkets" value={c} defaultChecked={markets?.includes(c)} /> {COUNTRIES[c].flag} {COUNTRIES[c].name}</label>)}</div></Field>
       <Field label="추가 요청사항"><textarea id="c-message" name="message" rows={3} className="input" placeholder="원하는 규격, 참고 제품, 예산 범위 등" /></Field>
       <div className="panel space-y-2.5 p-4 text-[12px] leading-[1.75] text-muted">
         <label className="flex items-start gap-[9px] cursor-pointer"><input type="checkbox" name="consentPrivacy" className="mt-[3px]" /><span>[필수] 문의 처리를 위한 개인정보 수집·이용에 동의합니다. {e.consentPrivacy && <span className="text-red">{e.consentPrivacy}</span>}</span></label>

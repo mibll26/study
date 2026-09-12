@@ -96,6 +96,7 @@ export async function IngredientPanel({ slug, sp }: { slug: string; sp: SP }) {
 
   return (
     <Overlay closeHref={closeHref} kind="panel" kicker={`${ing.category} · ${ing.nameEn}`} title={ing.nameKo}>
+      <Link href={`/formulate?add=${ing.slug}`} className="btn mb-4 no-underline">⚗ 이 원료로 배합 설계 시작</Link>
       <Tabs initial={initialTab} tabs={[{ label: "기본 정보", content: basic }, { label: "국가별 상태", content: status, count: ing.statuses.length }, { label: "취급 공급사", content: supplierTab, count: suppliers.length }]} />
       <IssueReportForm entityType="ingredient" entityId={ing.id} />
     </Overlay>
