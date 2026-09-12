@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  keyword       String
+  name          String
+  brand         String?
+  maker         String?
+  category      String?
+  ingredient    String?
+  functionality String?
+
+  // 식약처
+  mfdsReportNo   String? @unique
+  mfdsCompany    String?
+  mfdsReportDate String?
+  intakeMethod   String?
+
+  // 시장 (네이버)
+  naverProductId String? @unique
+  lowestPrice    Int?
+  highestPrice   Int?
+  mallName       String?
+  mallCount      Int?
+  searchTotal    Int?
+  productUrl     String?
+  imageUrl       String?
+
+  // 수동 입력
+  reviewCount Int?
+  rating      Float?
+
+  // 점수/관리
+  score       Float?
+  scoreDetail String?
+  isCandidate Boolean  @default(false)
+  memo        String?
+  source      String
+  collectedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([keyword])
+  @@index([score])
+  @@index([isCandidate])
+}
+
+model ScoreWeight {
+  key         String  @id
+  label       String
+  weight      Int     @default(10)
+  direction   String  @default("asc")
+  description String?
+  order       Int     @default(0)
+}
+
+model IngredientTrend {
+  ingredient String   @id
+  level      Int      @default(3)
+  updatedAt  DateTime @updatedAt
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model CollectJob {
+  id         Int       @id @default(autoincrement())
+  keyword    String
+  sources    String
+  status     String
+  mfdsCount  Int       @default(0)
+  naverCount Int       @default(0)
+  error      String?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+}
