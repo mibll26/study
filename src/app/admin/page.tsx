@@ -1,45 +1,38 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { getCredentials } from "@/lib/credentials";
+import { CONTACT_STATUS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-const statusLabel: Record<string, string> = { success: "성공", partial: "부분성공", failed: "실패", running: "실행중", pending: "대기" };
-
 export default async function AdminHome() {
-  const cred = await getCredentials();
-  const mfdsKey = Boolean(cred.mfdsApiKey), naverKey = Boolean(cred.naverClientId && cred.naverClientSecret);
-  const [products, candidates, failed, recent] = await Promise.all([
-    prisma.product.count(),
-    prisma.product.count({ where: { isCandidate: true } }),
-    prisma.collectJob.count({ where: { status: "failed" } }),
-    prisma.collectJob.findMany({ orderBy: { startedAt: "desc" }, take: 5 }),
+  const [ingredients, curated, suppliers, verified, contacts, openContacts, responded, apps, info, issues, recent] = await Promise.all([
+    prisma.ingredient.count(), prisma.ingredient.count({ where: { curated: true } }), prisma.supplier.count(), prisma.supplier.count({ where: { verificationStatus: "verified" } }),
+    prisma.contactRequest.count(), prisma.contactRequest.count({ where: { status: { in: ["submitted", "reviewed"] } } }), prisma.contactRequest.count({ where: { status: "responded" } }),
+    prisma.supplierApplication.count({ where: { status: "pending" } }), prisma.infoRequest.count({ where: { status: "open" } }), prisma.issueReport.count({ where: { status: "open" } }),
+    prisma.contactRequest.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
   ]);
+  const kpis = [
+    ["원료 (큐레이션)", `${ingredients} (${curated})`, "/admin/ingredients"], ["공급사 (검증)", `${suppliers} (${verified})`, "/admin/suppliers"],
+    ["컨택 요청 · 처리 대기", `${contacts} · ${openContacts}`, "/admin/contacts"], ["응답 완료 (NSM)", String(responded), "/admin/contacts"],
+    ["공급사 신청 대기", String(apps), "/admin/applications"], ["정보 요청 · 오류 신고", `${info} · ${issues}`, "/admin/requests"],
+  ];
   return (
-    <div className="space-y-5">
-      <h1 className="text-xl font-bold">관리자 대시보드</h1>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {[["총 제품", products], ["후보", candidates], ["실패 수집", failed], ["최근 수집", recent.length]].map(([l, v]) => (
-          <div key={String(l)} className="card"><div className="text-xs text-muted">{l}</div><div className="text-2xl font-bold tabular-nums">{v}</div></div>
-        ))}
+    <div className="space-y-6">
+      <div><div className="eyebrow mb-1">Dashboard</div><h1 className="text-[22px] font-semibold tracking-[-0.02em]">운영 현황</h1></div>
+      <div className="grid-ink grid-cols-2 lg:grid-cols-3">
+        {kpis.map(([k, v, h]) => <Link key={k} href={h} className="bg-panel px-5 py-4 text-ink no-underline hover:bg-white"><div className="text-[11.5px] text-muted-2">{k}</div><div className="font-mono text-[22px] font-medium tracking-[-0.02em]">{v}</div></Link>)}
       </div>
-      {(!mfdsKey || !naverKey) && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/30 dark:text-amber-100 dark:border-amber-700">
-          API 키가 아직 없습니다: {[!mfdsKey && "식약처", !naverKey && "네이버"].filter(Boolean).join(", ")}. <Link href="/admin/settings" className="underline font-medium">API 키 설정</Link>에서 붙여넣으면 바로 수집할 수 있습니다.
+      <section>
+        <div className="mb-2 flex items-baseline justify-between"><h2 className="font-semibold">최근 컨택 요청</h2><Link href="/admin/contacts" className="text-[12.5px]">전체 보기</Link></div>
+        <div className="overflow-x-auto border-2 border-ink bg-panel">
+          <table className="w-full text-[13px]">
+            <thead><tr><th className="th">접수번호</th><th className="th">회사</th><th className="th">원료</th><th className="th">공급사</th><th className="th">상태</th><th className="th">시각</th></tr></thead>
+            <tbody>
+              {recent.map((c) => <tr key={c.id}><td className="td font-mono text-[12px]">{c.refNo}</td><td className="td">{c.company}</td><td className="td">{c.ingredient}</td><td className="td text-muted">{JSON.parse(c.supplierNames).join(", ")}</td><td className="td">{CONTACT_STATUS[c.status] ?? c.status}</td><td className="td whitespace-nowrap text-muted-2">{c.createdAt.toLocaleString("ko-KR")}</td></tr>)}
+              {recent.length === 0 && <tr><td className="td py-8 text-center text-muted-2" colSpan={6}>아직 컨택 요청이 없습니다.</td></tr>}
+            </tbody>
+          </table>
         </div>
-      )}
-      <section className="card">
-        <div className="mb-2 flex items-center justify-between"><h2 className="font-semibold">최근 수집</h2><Link href="/admin/jobs" className="text-sm text-accent underline">전체 로그</Link></div>
-        {recent.length === 0 ? <p className="text-sm text-muted">아직 수집 이력이 없습니다. <Link href="/admin/collect" className="underline">수집 실행</Link></p> : (
-          <ul className="divide-y divide-line/60 text-sm">
-            {recent.map((j) => (
-              <li key={j.id} className="flex flex-wrap justify-between gap-2 py-1.5">
-                <span><b>{j.keyword}</b> <span className="text-muted">({j.sources})</span></span>
-                <span className="tabular-nums text-muted">식약처 {j.mfdsCount} · 네이버 {j.naverCount} · {statusLabel[j.status] ?? j.status} · {j.startedAt.toLocaleString("ko-KR")}</span>
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
     </div>
   );

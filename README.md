@@ -1,69 +1,54 @@
-# 건기식 수배 시스템
+# GlobalNutri Source
 
-건강기능식품 정보를 **식약처 공공데이터 API**와 **네이버 쇼핑 검색 API**에서 키워드 단위로 수집하고, 가중치 기반 점수로 판매 유망 후보를 정렬·필터링하는 Next.js 앱. 요구사항은 [docs/BRD.md](docs/BRD.md), [docs/PRD.md](docs/PRD.md) 참고.
+전 세계 건강기능식품 **원료·완제품 정보를 통합 검색**하고, 조건에 맞는 **공급사를 찾아 컨택 요청**을 보내는 원페이지 B2B 웹 서비스 (MVP). 요구사항: [docs/BRD.md](docs/BRD.md) · [docs/PRD.md](docs/PRD.md).
 
 ## 시작하기
 
 ```bash
-npm install            # postinstall에서 prisma generate 실행
+npm install            # postinstall에서 prisma generate
 cp .env.example .env
-npm run db:migrate     # SQLite 마이그레이션 (prisma/dev.db 생성)
-npm run db:seed        # 기본 가중치·설정 시드
+npm run db:migrate     # SQLite (prisma/dev.db)
+npm run db:seed        # 원료 14종 + 국가별 규제 상태 + 공급사 10곳 (큐레이션 초기 데이터)
 npm run dev            # http://localhost:3000
 ```
-
-### API 키 발급
-
-| 키 | 발급처 | 용도 |
-|---|---|---|
-| `MFDS_API_KEY` | https://www.foodsafetykorea.go.kr/api/ (식품안전나라 → 인증키 발급) | C003 건강기능식품 품목제조신고사항 |
-| `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` | https://developers.naver.com → 애플리케이션 등록 → "검색" API | 쇼핑 검색 (가격·판매몰·경쟁 상품 수) |
-
-키는 **관리자 → API 키 설정**(`/admin/settings`)에서 붙여넣고 "연결 테스트"로 확인합니다. `.env`에 넣어도 되지만 화면 입력이 우선합니다. 키 없이 화면을 보려면 같은 페이지의 "샘플 데이터 넣기"를 누르세요.
 
 ## 화면
 
 | 경로 | 설명 |
 |---|---|
-| `/` | 제품 목록 (점수순), 검색·필터·정렬, CSV 내보내기 |
-| `/products/[id]` | 식약처 정보 · 시장 정보 · 점수 상세 · 메모 |
-| `/admin` | 관리자 대시보드 (인증 없음 — 로컬 전용) |
-| `/admin/collect` | 키워드 입력 → 수집 실행 |
-| `/admin/products` | 제품 편집(리뷰수·평점 수동 입력)/삭제/후보 표시 |
-| `/admin/weights` | 지표 가중치, 목표 가격대, 원료 관심도 → 저장 시 전체 재계산 |
-| `/admin/jobs` | 수집 로그, 실패 건 재실행 |
-| `/admin/settings` | API 키 입력·연결 테스트, 샘플 데이터 넣기/삭제 |
+| `/` | 원페이지: Hero 검색 → 원료·제품 탐색 → 공급사 디렉터리 → 트렌드 → 규제 가이드 → 공급사 등록 CTA |
+| `/?ingredient=<slug>` | 원료 상세 패널 (기본 정보 / 국가별 상태 5축 / 취급 공급사 → 일괄 문의) |
+| `/?supplier=<slug>` | 공급사 상세 패널 |
+| `/?contact=<id,id>` | 컨택 요청 모달 (`contact=sourcing` = 운영팀 소싱 지원) |
+| `/?apply=1` | 공급사 등록 신청 모달 |
+| `/ingredient/<slug>`, `/supplier/<slug>` | SEO용 개별 URL — 패널이 열린 상태로 원페이지 렌더 |
+| `/admin` | 백오피스 (인증 없음, 로컬 전용): 원료 큐레이션, 공급사·검증 배지, 컨택 요청 워크플로우, 공급사 신청 승인, 정보 요청·오류 신고, 식약처 동기화 |
 
-## 점수 산정
+필터·패널 상태는 모두 쿼리스트링에 반영되어 링크 공유 시 재현됩니다. 비교 트레이(최대 3개)만 클라이언트 상태입니다.
 
-`src/lib/scoring/score.ts`. 지표별 원시값을 전체 제품 기준 min–max 정규화(0~1)한 뒤 가중 평균 × 100.
+## 데이터
 
-| 지표 | 원시값 | 방향 |
-|---|---|---|
-| 시장 수요 | log10(네이버 검색 결과 수 + 1) | 높을수록 ↑ |
-| 경쟁 강도 | 동일 키워드 내 제품 수 | 낮을수록 ↑ |
-| 가격 여지 | (최고가 − 최저가) / 최저가 | 높을수록 ↑ |
-| 가격대 적정성 | 최저가가 목표 가격대에 속하면 1, 벗어나면 거리 비례 감점 | 높을수록 ↑ |
-| 식약처 등록 신뢰도 | 신고번호 존재 + log10(동일 원료 등록 업체 수) | 높을수록 ↑ |
-| 원료 관심도 | 관리자 입력 1~5 (기본 3) | 높을수록 ↑ |
-
-결측 지표는 0.5(중립)로 처리하고 상세 화면에 "데이터 없음"으로 표시.
+- **L1 공공 DB**: 식품안전나라 C003(품목제조신고) → `MfdsProduct` 원본 보존, 원료 사전(이름·별칭)과 자동 매핑. 미매칭은 `/admin/sync` 큐에서 수동 연결. API 키는 `/admin/sync`에서 입력.
+- **L2 공급사 등록**: `/?apply=1` 신청 → 관리자 승인 → `공식 등록` 프로필 생성.
+- **L3 큐레이션**: `prisma/seed-data.ts` 초기 데이터 + `/admin/ingredients` 오버레이 편집. 규제 문구는 `공개` 체크 전 비노출.
+- 트렌드·규제 가이드는 정적 콘텐츠 (`src/lib/content/`). 모든 항목에 출처·확인일 표기.
 
 ## 구조
 
 ```
-prisma/schema.prisma        Product, ScoreWeight, IngredientTrend, Setting, CollectJob
-src/lib/collectors/         mfds.ts(식약처 어댑터) · naver.ts(네이버 어댑터) · index.ts(오케스트레이션+로그)
-src/lib/scoring/score.ts    점수 엔진, recalculateAll
-src/lib/actions/            Server Actions (제품·가중치·재실행)
-src/lib/products-query.ts   목록 필터/정렬 공통 로직
-src/app/api/                POST /api/collect · GET /api/products · GET /api/products/export
-src/lib/sample-data.ts      샘플 제품 10건
-scripts/fixture.ts          샘플 적재 스크립트 (npx tsx scripts/fixture.ts)
+prisma/schema.prisma          Ingredient · RegulatoryStatus(5축) · Supplier · SupplierIngredient · MfdsProduct · ContactRequest · SupplierApplication · InfoRequest · IssueReport · SyncJob · Setting
+src/lib/queries.ts            탐색/디렉터리 필터, 상세, 자동완성, 편집거리 유사 원료
+src/lib/url.ts                쿼리스트링 토글/패널 상태
+src/lib/actions/public.ts     컨택 요청·공급사 신청·정보 요청·오류 신고 (Server Actions)
+src/lib/actions/admin.ts      백오피스 액션
+src/lib/collectors/           mfds.ts(필드 매핑 단일 지점) · sync.ts(동기화+원료 매핑)
+src/components/sections/      Hero · Explore · Suppliers · Trends · Regulation · ForSuppliers
+src/components/panels/        IngredientPanel · SupplierPanel · ContactModal · ApplyModal
 ```
 
-## 주의
+## MVP에서 제외·단순화한 것
 
-- 식약처 API 응답 필드명은 `src/lib/collectors/mfds.ts`의 `mapMfdsRow` 한 곳에서만 매핑합니다. 실제 응답과 다르면 여기만 수정하세요.
-- 네이버 쇼핑 API는 리뷰 수·평점을 제공하지 않습니다. 관리자 → 제품 관리에서 수동 입력합니다.
-- `/admin`은 인증이 없습니다. 외부에 공개하지 마세요 (2차에서 인증 추가 예정).
+- 사용자 계정(FR-10)·이메일 발송: 컨택 폼에서 연락처를 직접 받고, 발송 제한(10건/일)은 이메일 기준. 공급사 전달·응답 기록은 관리자가 수동 처리.
+- 검색 엔진(OpenSearch): SQLite `contains` + 편집거리 유사 추천으로 대체.
+- 해외 DB(FDA/EFSA 등) 자동 연동: 국가별 상태는 큐레이션 입력. 식약처만 API 연동.
+- 관리자 인증·2FA: 외부 공개 전 필수 (PRD 6.4).

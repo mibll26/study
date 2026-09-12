@@ -7,78 +7,188 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Product {
+// ───────── 원료 (Ingredient) ─────────
+model Ingredient {
+  id             Int      @id @default(autoincrement())
+  slug           String   @unique
+  nameKo         String
+  nameEn         String
+  nameScientific String?
+  aliases        String   @default("[]")   // JSON string[]
+  category       String                    // 비타민·미네랄 / 식물추출물 / 프로바이오틱스 / 단백질·아미노산 / 지방산 / 기타
+  functionality  String   @default("[]")   // JSON string[] 기능성 태그
+  dosageForms    String   @default("[]")   // JSON string[] 일반적 제형
+  descriptionKo  String?
+  dailyIntake    String?
+  caution        String?
+  sourceName     String?
+  sourceUrl      String?
+  verifiedAt     String?
+  curated        Boolean  @default(false)  // 운영팀 큐레이션 완료
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  statuses  RegulatoryStatus[]
+  suppliers SupplierIngredient[]
+  products  MfdsProduct[]
+}
+
+// 국가별 규제 상태 — 5축 스키마
+model RegulatoryStatus {
+  id                   Int     @id @default(autoincrement())
+  ingredientId         Int
+  countryCode          String  // KR, US, EU, JP, CN
+  legalityStatus       String  // 요약 배지 텍스트 (예: 고시형 / NDI 불요 / Novel Food 인가 필요)
+  usable               Boolean @default(true)
+  approvalType         String?
+  approvalHolder       String? // 개별인정 인정권자
+  legality             String? // 사용 적법성 설명
+  allowedClaims        String  @default("[]") // JSON [{original, translated}]
+  facilityRequirements String?
+  registrationDuration String?
+  registrationCost     String?
+  alternativeChannels  String?
+  sourceName           String?
+  sourceUrl            String?
+  verifiedAt           String?
+  published            Boolean @default(true) // 검수 전 비노출 (R7)
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([ingredientId, countryCode])
+}
+
+// ───────── 공급사 (Supplier) ─────────
+model Supplier {
+  id                 Int      @id @default(autoincrement())
+  slug               String   @unique
+  nameKo             String
+  nameEn             String?
+  countryCode        String
+  supplierTypes      String   @default("[]") // JSON: OEM/ODM/OBM/원료/부자재/에이전시
+  dosageForms        String   @default("[]") // JSON
+  certifications     String   @default("[]") // JSON
+  moqMin             Int?
+  moqUnit            String?  // 개 / kg
+  leadWeeksMin       Int?
+  leadWeeksMax       Int?
+  verificationStatus String   @default("unverified") // verified / unverified / self_registered
+  description        String?
+  foundedYear        Int?
+  capacity           String?
+  contactEmail       String?  // 비공개
+  visible            Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  ingredients SupplierIngredient[]
+}
+
+model SupplierIngredient {
+  supplierId   Int
+  ingredientId Int
+  note         String?
+  supplier     Supplier   @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@id([supplierId, ingredientId])
+}
+
+// ───────── 완제품 (식약처 품목제조신고) ─────────
+model MfdsProduct {
   id            Int      @id @default(autoincrement())
-  keyword       String
+  reportNo      String   @unique
   name          String
-  brand         String?
-  maker         String?
-  category      String?
-  ingredient    String?
+  company       String
+  ingredientRaw String?
   functionality String?
+  intakeMethod  String?
+  reportDate    String?
+  keyword       String
+  ingredientId  Int?
+  fetchedAt     DateTime @default(now())
 
-  // 식약처
-  mfdsReportNo   String? @unique
-  mfdsCompany    String?
-  mfdsReportDate String?
-  intakeMethod   String?
-
-  // 시장 (네이버)
-  naverProductId String? @unique
-  lowestPrice    Int?
-  highestPrice   Int?
-  mallName       String?
-  mallCount      Int?
-  searchTotal    Int?
-  productUrl     String?
-  imageUrl       String?
-
-  // 수동 입력
-  reviewCount Int?
-  rating      Float?
-
-  // 점수/관리
-  score       Float?
-  scoreDetail String?
-  isCandidate Boolean  @default(false)
-  memo        String?
-  source      String
-  collectedAt DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  ingredient Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
 
   @@index([keyword])
-  @@index([score])
-  @@index([isCandidate])
+  @@index([name])
 }
 
-model ScoreWeight {
-  key         String  @id
-  label       String
-  weight      Int     @default(10)
-  direction   String  @default("asc")
-  description String?
-  order       Int     @default(0)
+// ───────── 컨택 요청 ─────────
+model ContactRequest {
+  id            Int       @id @default(autoincrement())
+  refNo         String    @unique
+  company       String
+  contactName   String
+  title         String?
+  email         String
+  phone         String
+  ingredient    String
+  dosageForm    String
+  quantityRange String
+  targetDate    String?
+  targetMarkets String    @default("[]")
+  message       String?
+  supplierIds   String    @default("[]") // JSON number[]
+  supplierNames String    @default("[]")
+  status        String    @default("submitted") // submitted / reviewed / sent / responded / closed
+  createdAt     DateTime  @default(now())
+  sentAt        DateTime?
+  respondedAt   DateTime?
+  adminNote     String?
 }
 
-model IngredientTrend {
-  ingredient String   @id
-  level      Int      @default(3)
-  updatedAt  DateTime @updatedAt
+// ───────── 공급사 등록 신청 ─────────
+model SupplierApplication {
+  id            Int      @id @default(autoincrement())
+  company       String
+  countryCode   String
+  supplierTypes String   @default("[]")
+  dosageForms   String   @default("[]")
+  certifications String  @default("[]")
+  moq           String?
+  leadTime      String?
+  contactName   String
+  email         String
+  phone         String?
+  message       String?
+  status        String   @default("pending") // pending / approved / rejected
+  createdAt     DateTime @default(now())
+}
+
+// 정보 요청 (검색 결과 없음 → 큐레이션 우선순위)
+model InfoRequest {
+  id        Int      @id @default(autoincrement())
+  query     String
+  email     String?
+  status    String   @default("open")
+  createdAt DateTime @default(now())
+}
+
+// 오류 신고
+model IssueReport {
+  id         Int      @id @default(autoincrement())
+  entityType String
+  entityId   Int
+  field      String?
+  message    String
+  status     String   @default("open")
+  createdAt  DateTime @default(now())
+}
+
+// 공공 DB 동기화 로그
+model SyncJob {
+  id         Int       @id @default(autoincrement())
+  source     String    // mfds
+  keyword    String
+  status     String
+  count      Int       @default(0)
+  error      String?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
 }
 
 model Setting {
   key   String @id
   value String
-}
-
-model CollectJob {
-  id         Int       @id @default(autoincrement())
-  keyword    String
-  sources    String
-  status     String
-  mfdsCount  Int       @default(0)
-  naverCount Int       @default(0)
-  error      String?
-  startedAt  DateTime  @default(now())
-  finishedAt DateTime?
 }
