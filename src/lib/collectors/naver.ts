@@ -31,10 +31,8 @@ type RawItem = {
   category1?: string; category2?: string; category3?: string; category4?: string;
 };
 
-export async function fetchNaver(keyword: string, maxPages = 3): Promise<NaverResult> {
-  const id = process.env.NAVER_CLIENT_ID;
-  const secret = process.env.NAVER_CLIENT_SECRET;
-  if (!id || !secret) throw new Error("NAVER_CLIENT_ID / NAVER_CLIENT_SECRET 환경변수가 설정되지 않았습니다");
+export async function fetchNaver(keyword: string, id: string, secret: string, maxPages = 3): Promise<NaverResult> {
+  if (!id || !secret) throw new Error("네이버 API 키가 없습니다. 관리자 → API 키 설정에서 입력하세요");
 
   let total = 0;
   const items: NaverItem[] = [];

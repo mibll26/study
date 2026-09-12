@@ -6,7 +6,7 @@
 
 ```bash
 npm install            # postinstall에서 prisma generate 실행
-cp .env.example .env   # API 키 입력
+cp .env.example .env
 npm run db:migrate     # SQLite 마이그레이션 (prisma/dev.db 생성)
 npm run db:seed        # 기본 가중치·설정 시드
 npm run dev            # http://localhost:3000
@@ -19,7 +19,7 @@ npm run dev            # http://localhost:3000
 | `MFDS_API_KEY` | https://www.foodsafetykorea.go.kr/api/ (식품안전나라 → 인증키 발급) | C003 건강기능식품 품목제조신고사항 |
 | `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` | https://developers.naver.com → 애플리케이션 등록 → "검색" API | 쇼핑 검색 (가격·판매몰·경쟁 상품 수) |
 
-키 없이도 화면은 열리지만, 수집 실행 시 해당 소스는 "실패"로 기록됩니다.
+키는 **관리자 → API 키 설정**(`/admin/settings`)에서 붙여넣고 "연결 테스트"로 확인합니다. `.env`에 넣어도 되지만 화면 입력이 우선합니다. 키 없이 화면을 보려면 같은 페이지의 "샘플 데이터 넣기"를 누르세요.
 
 ## 화면
 
@@ -32,6 +32,7 @@ npm run dev            # http://localhost:3000
 | `/admin/products` | 제품 편집(리뷰수·평점 수동 입력)/삭제/후보 표시 |
 | `/admin/weights` | 지표 가중치, 목표 가격대, 원료 관심도 → 저장 시 전체 재계산 |
 | `/admin/jobs` | 수집 로그, 실패 건 재실행 |
+| `/admin/settings` | API 키 입력·연결 테스트, 샘플 데이터 넣기/삭제 |
 
 ## 점수 산정
 
@@ -57,7 +58,8 @@ src/lib/scoring/score.ts    점수 엔진, recalculateAll
 src/lib/actions/            Server Actions (제품·가중치·재실행)
 src/lib/products-query.ts   목록 필터/정렬 공통 로직
 src/app/api/                POST /api/collect · GET /api/products · GET /api/products/export
-scripts/fixture.ts          점수 검증용 테스트 데이터 (npx tsx scripts/fixture.ts)
+src/lib/sample-data.ts      샘플 제품 10건
+scripts/fixture.ts          샘플 적재 스크립트 (npx tsx scripts/fixture.ts)
 ```
 
 ## 주의

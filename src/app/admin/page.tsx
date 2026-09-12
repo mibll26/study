@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { getCredentials } from "@/lib/credentials";
 
 export const dynamic = "force-dynamic";
 
 const statusLabel: Record<string, string> = { success: "성공", partial: "부분성공", failed: "실패", running: "실행중", pending: "대기" };
 
 export default async function AdminHome() {
-  const [products, candidates, failed, recent, mfdsKey, naverKey] = await Promise.all([
+  const cred = await getCredentials();
+  const mfdsKey = Boolean(cred.mfdsApiKey), naverKey = Boolean(cred.naverClientId && cred.naverClientSecret);
+  const [products, candidates, failed, recent] = await Promise.all([
     prisma.product.count(),
     prisma.product.count({ where: { isCandidate: true } }),
     prisma.collectJob.count({ where: { status: "failed" } }),
     prisma.collectJob.findMany({ orderBy: { startedAt: "desc" }, take: 5 }),
-    Promise.resolve(Boolean(process.env.MFDS_API_KEY)),
-    Promise.resolve(Boolean(process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET)),
   ]);
   return (
     <div className="space-y-5">
@@ -24,7 +25,7 @@ export default async function AdminHome() {
       </div>
       {(!mfdsKey || !naverKey) && (
         <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/30 dark:text-amber-100 dark:border-amber-700">
-          API 키가 설정되지 않았습니다: {[!mfdsKey && "MFDS_API_KEY", !naverKey && "NAVER_CLIENT_ID/SECRET"].filter(Boolean).join(", ")}. <code>.env</code>에 입력 후 서버를 재시작하세요.
+          API 키가 아직 없습니다: {[!mfdsKey && "식약처", !naverKey && "네이버"].filter(Boolean).join(", ")}. <Link href="/admin/settings" className="underline font-medium">API 키 설정</Link>에서 붙여넣으면 바로 수집할 수 있습니다.
         </div>
       )}
       <section className="card">

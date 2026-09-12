@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { getCredentials } from "@/lib/credentials";
 import { fetchMfds } from "./mfds";
 import { fetchNaver } from "./naver";
 import { recalculateAll } from "@/lib/scoring/score";
@@ -14,13 +15,13 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
 /** 키워드 1개 수집 → CollectJob 기록. 소스별 실패는 부분성공으로 처리 (FR-05, FR-06) */
 export async function collectKeyword(keyword: string, sources: Source[]): Promise<CollectResult> {
   const job = await prisma.collectJob.create({ data: { keyword, sources: sources.join(","), status: "running" } });
-  const settings = await getSettings();
+  const [settings, cred] = await Promise.all([getSettings(), getCredentials()]);
   const errors: string[] = [];
   let mfdsCount = 0, naverCount = 0;
 
   if (sources.includes("mfds")) {
     try {
-      const items = await withRetry(() => fetchMfds(keyword));
+      const items = await withRetry(() => fetchMfds(keyword, cred.mfdsApiKey));
       for (const it of items) {
         await prisma.product.upsert({
           where: { mfdsReportNo: it.reportNo },
@@ -34,7 +35,7 @@ export async function collectKeyword(keyword: string, sources: Source[]): Promis
 
   if (sources.includes("naver")) {
     try {
-      const { total, items } = await withRetry(() => fetchNaver(keyword, settings.naverMaxPages));
+      const { total, items } = await withRetry(() => fetchNaver(keyword, cred.naverClientId, cred.naverClientSecret, settings.naverMaxPages));
       // 동일 상품(productId)이 여러 몰에서 나오면 판매몰 수로 집계
       const malls = new Map<string, Set<string>>();
       for (const it of items) {

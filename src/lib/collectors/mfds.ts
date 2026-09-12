@@ -43,9 +43,8 @@ export function mapMfdsRow(row: RawRow): MfdsItem | null {
   };
 }
 
-export async function fetchMfds(keyword: string, maxPages = 2): Promise<MfdsItem[]> {
-  const key = process.env.MFDS_API_KEY;
-  if (!key) throw new Error("MFDS_API_KEY 환경변수가 설정되지 않았습니다");
+export async function fetchMfds(keyword: string, key: string, maxPages = 2): Promise<MfdsItem[]> {
+  if (!key) throw new Error("식약처 API 키가 없습니다. 관리자 → API 키 설정에서 입력하세요");
 
   const items: MfdsItem[] = [];
   for (let page = 0; page < maxPages; page++) {

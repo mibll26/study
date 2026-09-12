@@ -9,6 +9,7 @@ const items = [
   { href: "/admin/products", label: "제품 관리" },
   { href: "/admin/weights", label: "가중치 설정" },
   { href: "/admin/jobs", label: "수집 로그" },
+  { href: "/admin/settings", label: "API 키 설정" },
 ];
 
 export function AdminNav() {
