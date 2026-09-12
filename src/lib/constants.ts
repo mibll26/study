@@ -3,7 +3,7 @@ export const COUNTRIES: Record<string, { name: string; flag: string }> = {
 };
 export const MARKET_CODES = ["KR", "US", "EU", "JP", "CN"] as const;
 export const SUPPLIER_COUNTRY_CODES = ["KR", "CN", "IN", "US", "EU", "JP", "OTHER"] as const;
-export const FUNCTIONALITIES = ["면역", "관절", "눈건강", "장건강", "수면", "체지방", "혈당", "간건강", "기억력", "피부", "뼈건강", "혈행", "항산화", "피로개선", "근육", "에너지", "혈압"];
+export const FUNCTIONALITIES = ["수면", "스트레스", "면역", "관절", "눈건강", "장건강", "체지방", "혈당", "간건강", "기억력", "피부", "뼈건강", "혈행", "항산화", "피로개선", "에너지", "근육", "전립선", "콜레스테롤", "혈압"];
 export const CATEGORIES = ["비타민·미네랄", "식물추출물", "프로바이오틱스", "단백질·아미노산", "지방산", "기타"];
 export const APPROVAL_TYPES_KR = ["고시형", "개별인정형"];
 export const DOSAGE_FORMS = ["정제", "캡슐", "연질캡슐", "분말", "스틱", "구미", "액상", "RTD", "젤리"];

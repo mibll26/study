@@ -80,7 +80,7 @@ export async function listSuppliers(q: SupplierQuery) {
 export async function getIngredient(slug: string) {
   const ing = await prisma.ingredient.findUnique({
     where: { slug },
-    include: { statuses: { where: { published: true }, orderBy: { countryCode: "asc" } }, suppliers: { include: { supplier: true }, where: { supplier: { visible: true } } }, products: { take: 10, orderBy: { fetchedAt: "desc" } } },
+    include: { statuses: { where: { published: true }, orderBy: { countryCode: "asc" } }, suppliers: { include: { supplier: true }, where: { supplier: { visible: true } } }, products: { take: 10, orderBy: { fetchedAt: "desc" } }, evidence: { orderBy: { level: "desc" } } },
   });
   if (!ing) return null;
   const order = ["KR", "US", "EU", "JP", "CN"];

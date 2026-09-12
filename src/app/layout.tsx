@@ -27,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/#suppliers" className="text-muted no-underline hover:text-ink hover:underline">공급사</Link>
               <Link href="/#trends" className="text-muted no-underline hover:text-ink hover:underline">트렌드</Link>
               <Link href="/#regulation" className="text-muted no-underline hover:text-ink hover:underline">규제 가이드</Link>
+              <Link href="/discover" className="font-medium text-ink no-underline hover:underline">조합 탐색</Link>
               <Link href="/formulate" className="font-medium text-ink no-underline hover:underline">배합 설계</Link>
             </nav>
             <Link href="/?apply=1#for-suppliers" scroll={false} className="ml-auto border border-ink px-[17px] py-2 text-[13px] text-ink no-underline hover:bg-ink hover:text-paper md:ml-0">공급사 등록</Link>

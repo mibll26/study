@@ -10,8 +10,10 @@ export type IngredientReport = {
   markets: { code: string; status: Level; label: string; note: string; approvalHolder: string | null; alternativeChannels: string | null; claims: { original: string; translated: string }[]; sourceName: string | null; sourceUrl: string | null; verifiedAt: string | null }[];
 };
 export type SupplierMatch = { id: number; slug: string; nameKo: string; countryCode: string; verificationStatus: string; supplierTypes: string[]; coversAll: boolean; missing: string[]; formOk: boolean | null; moqMin: number | null; moqUnit: string | null; leadWeeksMin: number | null; leadWeeksMax: number | null };
+export type InteractionNote = { aName: string; bName: string; type: string; label: string; tone: "good" | "neutral" | "bad"; note: string };
 export type Report = {
   ingredients: IngredientReport[];
+  interactions: InteractionNote[];
   markets: { code: string; status: Level; ok: string[]; warn: string[]; blocked: string[]; unknown: string[] }[];
   suppliers: SupplierMatch[];
   summary: { level: Level; text: string };
@@ -85,6 +87,11 @@ export async function checkFormulation(input: FormulationInput): Promise<Report>
     return { id: s.id, slug: s.slug, nameKo: s.nameKo, countryCode: s.countryCode, verificationStatus: s.verificationStatus, supplierTypes: types, coversAll: missing.length === 0, missing, formOk, moqMin: s.moqMin, moqUnit: s.moqUnit, leadWeeksMin: s.leadWeeksMin, leadWeeksMax: s.leadWeeksMax };
   }).sort((a, b) => Number(b.coversAll) - Number(a.coversAll) || Number(b.formOk ?? 0.5) - Number(a.formOk ?? 0.5) || a.missing.length - b.missing.length || (a.verificationStatus === "verified" ? -1 : 1));
 
+  // 상호작용
+  const ints = ids.length > 1 ? await prisma.ingredientInteraction.findMany({ where: { aId: { in: ids }, bId: { in: ids } }, include: { a: { select: { nameKo: true } }, b: { select: { nameKo: true } } } }) : [];
+  const LABEL: Record<string, { label: string; tone: InteractionNote["tone"] }> = { synergy: { label: "시너지", tone: "good" }, complementary: { label: "상보", tone: "neutral" }, caution: { label: "병용 주의", tone: "bad" }, antagonism: { label: "길항", tone: "bad" }, absorption: { label: "흡수 경쟁", tone: "bad" } };
+  const interactions: InteractionNote[] = ints.map((i) => ({ aName: i.a.nameKo, bName: i.b.nameKo, type: i.type, ...(LABEL[i.type] ?? { label: i.type, tone: "neutral" as const }), note: i.note }));
+
   // 요약
   const worstMarket = marketSummary.reduce<Level>((w, m) => (RANK[m.status] > RANK[w] ? m.status : w), "ok");
   const intakeBad = ingredients.filter((r) => r.intake.status === "high" || r.intake.status === "low");
@@ -93,7 +100,10 @@ export async function checkFormulation(input: FormulationInput): Promise<Report>
     : level === "ok" ? `${markets.map((m) => COUNTRIES[m]?.flag).join(" ")} 선택한 모든 시장에서 사용 가능하고 함량이 KR 기준 범위 안에 있습니다. 완제품 제조 가능 공급사 ${suppliers.filter((s) => s.coversAll && s.formOk).length}곳.`
     : level === "blocked" ? `막히는 항목이 있습니다: ${[...marketSummary.filter((m) => m.blocked.length).map((m) => `${COUNTRIES[m.code]?.flag} ${m.blocked.join("·")}`), ...intakeBad.filter((r) => r.intake.status === "high").map((r) => `${r.nameKo} 상한 초과`)].join(" / ")}`
     : `검토 필요: ${[...marketSummary.filter((m) => m.warn.length).map((m) => `${COUNTRIES[m.code]?.flag} ${m.warn.join("·")}`), ...marketSummary.filter((m) => m.unknown.length).map((m) => `${COUNTRIES[m.code]?.flag} 정보 없음(${m.unknown.join("·")})`), ...intakeBad.map((r) => `${r.nameKo} 함량 ${r.intake.status === "low" ? "하한 미만" : "상한 초과"}`)].join(" / ")}`;
-  return { ingredients, markets: marketSummary, suppliers, summary: { level, text } };
+  const cautions = interactions.filter((i) => i.tone === "bad");
+  const finalLevel: Level = level === "ok" && cautions.length ? "warn" : level;
+  const finalText = level === "ok" && cautions.length ? `${text} 단, 상호작용 주의 ${cautions.length}건: ${cautions.map((c) => `${c.aName}+${c.bName}(${c.label})`).join(", ")}` : text;
+  return { ingredients, interactions, markets: marketSummary, suppliers, summary: { level: finalLevel, text: finalText } };
 }
 
 function fmt(n: number | null): string {

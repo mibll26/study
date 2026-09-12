@@ -28,8 +28,8 @@ export function FormulationBuilder({ ingredients, saved, initialAdd }: { ingredi
   const [note, setNote] = useState(saved?.note ?? "");
   const [items, setItems] = useState<Item[]>(() => {
     if (saved) return saved.items;
-    const first = initialAdd ? ingredients.find((i) => i.slug === initialAdd) : null;
-    return first ? [{ slug: first.slug, amount: first.intakeMin ?? 0, unit: first.intakeUnit ?? "mg" }] : [];
+    const slugs = initialAdd ? initialAdd.split(",").map((x) => x.trim()).filter(Boolean) : [];
+    return slugs.map((sl) => ingredients.find((i) => i.slug === sl)).filter((i): i is PickerIngredient => Boolean(i)).map((i) => ({ slug: i.slug, amount: i.intakeMin ?? 0, unit: i.intakeUnit ?? "mg" }));
   });
   const [dosageForm, setDosageForm] = useState(saved?.dosageForm ?? "캡슐");
   const [markets, setMarkets] = useState<string[]>(saved?.markets?.length ? saved.markets : ["KR"]);
@@ -175,6 +175,13 @@ export function FormulationBuilder({ ingredients, saved, initialAdd }: { ingredi
             <ul className="divide-y divide-line-soft">
               {report.ingredients.flatMap((r) => r.markets.filter((m) => m.status !== "ok").map((m) => <li key={r.slug + m.code} className="px-4 py-2 text-[12px] leading-[1.6]"><span className={`font-medium ${m.status === "blocked" ? "text-red" : m.status === "warn" ? "text-amber" : "text-muted-2"}`}>{COUNTRIES[m.code]?.flag} {r.nameKo}</span> — {m.note}</li>))}
             </ul>
+          </div>
+        )}
+
+        {report && report.interactions.length > 0 && (
+          <div className="border-2 border-ink bg-panel">
+            <div className="border-b-2 border-ink px-4 py-2.5 eyebrow">원료 간 상호작용</div>
+            <ul className="divide-y divide-line-soft">{report.interactions.map((i, k) => <li key={k} className="px-4 py-2 text-[12px] leading-[1.6]"><span className={`badge mr-1.5 ${i.tone === "good" ? "border-blue text-blue" : i.tone === "bad" ? "border-red text-red" : "border-line text-muted-2"}`}>{i.label}</span>{i.aName} + {i.bName} — <span className="text-muted">{i.note}</span></li>)}</ul>
           </div>
         )}
 

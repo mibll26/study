@@ -37,6 +37,12 @@ export async function IngredientPanel({ slug, sp }: { slug: string; sp: SP }) {
         <Row k="주의사항" v={ing.caution} />
       </dl>
       <div className="mt-3"><Src name={ing.sourceName ?? "식품안전나라 (MFDS)"} url={ing.sourceUrl ?? "https://various.foodsafetykorea.go.kr"} at={ing.verifiedAt ?? "2026-09-01"} /></div>
+      {ing.evidence.length > 0 && (
+        <div className="mt-6">
+          <div className="eyebrow mb-2">목표별 근거 <span className="font-mono">{ing.evidence.length}</span></div>
+          <ul className="divide-y divide-line-soft border-2 border-ink bg-panel text-[12.5px]">{ing.evidence.map((e) => <li key={e.id} className="px-3 py-2"><div className="flex items-center gap-2"><Link href={`/discover?goal=${encodeURIComponent(e.goal)}&pin=${ing.slug}`} className="font-medium">{e.goal}</Link><span className="inline-flex h-[18px] w-[18px] items-center justify-center border border-ink font-mono text-[11px]">{["", "D", "C", "B", "A"][e.level]}</span><span className="text-muted-2">{e.mechanism}</span>{e.refUrl && <a href={e.refUrl} target="_blank" rel="noopener" className="ml-auto text-[11px]">근거 ↗</a>}</div><div className="text-muted">{e.summary}</div></li>)}</ul>
+        </div>
+      )}
       {ing.products.length > 0 && (
         <div className="mt-6">
           <div className="eyebrow mb-2">이 원료를 쓴 식약처 신고 완제품 <span className="font-mono">{ing.products.length}</span></div>
